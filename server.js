@@ -138,7 +138,15 @@ app.get("/api/status", authenticateToken, (req, res) => {
     });
   }
 });
-
+// --- HEALTH CHECK / PING ENDPOINT ---
+// This is the dedicated URL that UptimeRobot will hit.
+app.get("/ping", (req, res) => {
+  // It simply sends back a success response.
+  res.status(200).json({
+    status: "ok",
+    message: "Server is awake and running.",
+  });
+});
 app.listen(PORT, () =>
   console.log(`Secure server running on http://localhost:${PORT}`)
 );
