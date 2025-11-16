@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <!-- You can reuse the styles from auth.html for a consistent look -->
+    <style>
+      /* Add some basic styles for the dashboard */
+      body {
+        font-family: sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .dashboard-container {
+        text-align: center;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      #activation-section,
+      #tool-section {
+        display: none;
+      } /* Hide sections by default */
+      input {
+        padding: 10px;
+        margin-right: 5px;
+      }
+      button {
+        padding: 10px;
+      }
+    </style>
+
+    <script>
+      // --- THE GUARD SCRIPT ---
+      // This runs BEFORE the page loads to ensure it's protected.
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        window.location.replace("auth.html"); // Use replace so user can't click "back"
+      }
+    </script>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <h1 id="welcome-message">Loading...</h1>
+      <p id="status-message"></p>
+
+      <!-- Activation View (Shown if user is not yet activated) -->
+      <div id="activation-section">
+        <p>Please enter your serial key to unlock the tool.</p>
+        <form id="activation-form">
+          <input
+            type="text"
+            id="key-input"
+            placeholder="Your Serial Key"
+            required
+          />
+          <button type="submit">Activate</button>
+        </form>
+        <p id="activation-message"></p>
+      </div>
+
+      <!-- Main Tool View (Shown after successful activation) -->
+      <div id="tool-section">
+        <h2>TikTok Coin Tool is Active!</h2>
+        <p>Your access will expire on: <strong id="expiry-date"></strong></p>
+        <!-- Your actual tool's interface would go here -->
+      </div>
+
+      <br />
+      <button id="logout-button">Logout</button>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const API_URL = "http://localhost:3000/api"; // Your backend URL
+        const token = localStorage.getItem("authToken");
+
+        // UI Elements
+        const welcomeMsg = document.getElementById("welcome-message");
+        const statusMsg = document.getElementById("status-message");
+        const activationSection = document.getElementById("activation-section");
+        const toolSection = document.getElementById("tool-section");
+        const expiryDateEl = document.getElementById("expiry-date");
+        const activationForm = document.getElementById("activation-form");
+        const keyInput = document.getElementById("key-input");
+        const activationMessage = document.getElementById("activation-message");
+        const logoutButton = document.getElementById("logout-button");
+
+        // --- Check Status with the Backend ---
+        try {
+          const res = await fetch(`${API_URL}/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.status === 401 || res.status === 403) {
+            // Token is invalid or expired
+            localStorage.removeItem("authToken");
+            window.location.replace("auth.html");
+            return;
+          }
+
+          const data = await res.json();
+          welcomeMsg.textContent = `Welcome, ${data.username}!`;
+
+          if (data.isActivated) {
+            toolSection.style.display = "block";
+            expiryDateEl.textContent = new Date(data.expires).toLocaleString();
+          } else {
+            activationSection.style.display = "block";
+          }
+        } catch (err) {
+          statusMsg.textContent = "Error connecting to server.";
+        }
+
+        // --- Activation Form Logic ---
+        activationForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const key = keyInput.value;
+          try {
+            const res = await fetch(`${API_URL}/activate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ key }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            // Success! Reload the page to reflect the new state.
+            window.location.reload();
+          } catch (err) {
+            activationMessage.textContent = err.message;
+            activationMessage.style.color = "red";
+          }
+        });
+
+        // --- Logout Logic ---
+        logoutButton.addEventListener("click", () => {
+          localStorage.removeItem("authToken");
+          window.location.href = "auth.html";
+        });
+      });
+    </script>
+  </body>
+</html>

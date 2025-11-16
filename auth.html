@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- ... (same <head> and <style> as before, no changes needed) ... -->
+    <title>Login | TikTok Coin Tool</title>
+  </head>
+  <body>
+    <div class="activation-container">
+      <div class="activation-box">
+        <!-- Login View (Default) -->
+        <div id="login-view">
+          <h1>Login</h1>
+          <p class="subtitle">Enter your credentials to access the tool.</p>
+          <form id="login-form">
+            <div id="login-message-box"></div>
+            <div class="input-group">
+              <input
+                type="text"
+                id="login-username"
+                placeholder="Username"
+                required
+              />
+            </div>
+            <div class="input-group">
+              <input
+                type="password"
+                id="login-password"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <button type="submit" class="activate-btn">Login</button>
+          </form>
+          <p class="contact-text" style="margin-top: 20px">
+            No account? <a href="#" id="show-register-view">Register here</a>
+          </p>
+        </div>
+
+        <!-- Registration View (Hidden) -->
+        <div id="register-view" style="display: none">
+          <h1>Register</h1>
+          <p class="subtitle">Create an account to get started.</p>
+          <form id="register-form">
+            <div id="register-message-box"></div>
+            <div class="input-group">
+              <input
+                type="text"
+                id="register-username"
+                placeholder="Username"
+                required
+              />
+            </div>
+            <div class="input-group">
+              <input
+                type="password"
+                id="register-password"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <button type="submit" class="activate-btn">Create Account</button>
+          </form>
+          <p class="contact-text" style="margin-top: 20px">
+            Already have an account?
+            <a href="#" id="show-login-view">Login here</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const API_URL = "http://localhost:3000/api"; // Change to your live server URL
+        const DASHBOARD_URL = "dashboard.html";
+
+        // View Elements
+        const loginView = document.getElementById("login-view");
+        const registerView = document.getElementById("register-view");
+        const showRegisterLink = document.getElementById("show-register-view");
+        const showLoginLink = document.getElementById("show-login-view");
+
+        // Form Elements
+        const loginForm = document.getElementById("login-form");
+        const registerForm = document.getElementById("register-form");
+        const loginMsg = document.getElementById("login-message-box");
+        const registerMsg = document.getElementById("register-message-box");
+
+        // --- View Switching ---
+        showRegisterLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          loginView.style.display = "none";
+          registerView.style.display = "block";
+        });
+        showLoginLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          registerView.style.display = "none";
+          loginView.style.display = "block";
+        });
+
+        // --- Registration Logic ---
+        registerForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const username = document.getElementById("register-username").value;
+          const password = document.getElementById("register-password").value;
+
+          try {
+            const res = await fetch(`${API_URL}/register`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, password }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            registerMsg.textContent = "Registration successful! Please login.";
+            registerMsg.className = "success";
+          } catch (err) {
+            registerMsg.textContent = err.message;
+            registerMsg.className = "error";
+          }
+        });
+
+        // --- Login Logic ---
+        loginForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const username = document.getElementById("login-username").value;
+          const password = document.getElementById("login-password").value;
+
+          try {
+            const res = await fetch(`${API_URL}/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username, password }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            // The most important step: Save the token
+            localStorage.setItem("authToken", data.token);
+            window.location.href = DASHBOARD_URL;
+          } catch (err) {
+            loginMsg.textContent = err.message;
+            loginMsg.className = "error";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
