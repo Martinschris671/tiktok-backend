@@ -2,40 +2,80 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Dashboard</title>
-    <!-- You can reuse the styles from auth.html for a consistent look -->
+    <title>Dashboard | TikTok Coin Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-      /* Add some basic styles for the dashboard */
       body {
-        font-family: sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
+        background-color: #f8f8f8;
+        text-align: center;
       }
       .dashboard-container {
-        text-align: center;
+        max-width: 500px;
+        width: 100%;
         padding: 40px;
         border-radius: 8px;
+        background-color: #fff;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 24px;
+      }
+      p {
+        color: #6b6b6b;
+      }
+      strong {
+        color: #161823;
       }
       #activation-section,
       #tool-section {
         display: none;
-      } /* Hide sections by default */
-      input {
-        padding: 10px;
-        margin-right: 5px;
+        margin-top: 20px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        text-align: center;
+        font-size: 16px;
       }
       button {
-        padding: 10px;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      #activation-form button {
+        background-color: #28a745;
+      }
+      #logout-button {
+        background-color: #fe2c55;
+        margin-top: 20px;
+      }
+      #activation-message {
+        margin-top: 15px;
+        color: #dc3545;
+        font-weight: 500;
       }
     </style>
 
     <script>
-      // --- THE GUARD SCRIPT ---
-      // This runs BEFORE the page loads to ensure it's protected.
+      // --- THE GUARD SCRIPT (RUNS BEFORE PAGE LOADS) ---
       const token = localStorage.getItem("authToken");
       if (!token) {
         window.location.replace("auth.html"); // Use replace so user can't click "back"
@@ -47,7 +87,7 @@
       <h1 id="welcome-message">Loading...</h1>
       <p id="status-message"></p>
 
-      <!-- Activation View (Shown if user is not yet activated) -->
+      <!-- Shown if user is logged in but NOT yet activated -->
       <div id="activation-section">
         <p>Please enter your serial key to unlock the tool.</p>
         <form id="activation-form">
@@ -57,30 +97,27 @@
             placeholder="Your Serial Key"
             required
           />
-          <button type="submit">Activate</button>
+          <button type="submit">Activate Key</button>
         </form>
         <p id="activation-message"></p>
       </div>
 
-      <!-- Main Tool View (Shown after successful activation) -->
+      <!-- Shown after successful activation -->
       <div id="tool-section">
         <h2>TikTok Coin Tool is Active!</h2>
         <p>Your access will expire on: <strong id="expiry-date"></strong></p>
         <!-- Your actual tool's interface would go here -->
       </div>
 
-      <br />
       <button id="logout-button">Logout</button>
     </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", async () => {
-        const API_URL = "https://tiktok-coin-api.onrender.com/api"; // Your backend URL
+        const API_URL = "https://tiktok-coin-api.onrender.com/api"; // <-- IMPORTANT: USE YOUR LIVE RENDER URL
         const token = localStorage.getItem("authToken");
 
-        // UI Elements
         const welcomeMsg = document.getElementById("welcome-message");
-        const statusMsg = document.getElementById("status-message");
         const activationSection = document.getElementById("activation-section");
         const toolSection = document.getElementById("tool-section");
         const expiryDateEl = document.getElementById("expiry-date");
@@ -96,14 +133,13 @@
           });
 
           if (res.status === 401 || res.status === 403) {
-            // Token is invalid or expired
             localStorage.removeItem("authToken");
             window.location.replace("auth.html");
             return;
           }
 
           const data = await res.json();
-          welcomeMsg.textContent = `Welcome, ${data.username}!`;
+          welcomeMsg.textContent = `Welcome, ${data.email}!`;
 
           if (data.isActivated) {
             toolSection.style.display = "block";
@@ -112,13 +148,15 @@
             activationSection.style.display = "block";
           }
         } catch (err) {
-          statusMsg.textContent = "Error connecting to server.";
+          welcomeMsg.textContent = "Error connecting to server.";
         }
 
         // --- Activation Form Logic ---
         activationForm.addEventListener("submit", async (e) => {
           e.preventDefault();
-          const key = keyInput.value;
+          const key = keyInput.value.trim();
+          if (!key) return;
+
           try {
             const res = await fetch(`${API_URL}/activate`, {
               method: "POST",
@@ -131,11 +169,9 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
 
-            // Success! Reload the page to reflect the new state.
-            window.location.reload();
+            window.location.reload(); // Reload the page to show the activated state
           } catch (err) {
             activationMessage.textContent = err.message;
-            activationMessage.style.color = "red";
           }
         });
 

@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -6,17 +5,18 @@ const bcrypt = require("bcryptjs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = "YOUR_SUPER_SECRET_KEY_CHANGE_THIS"; // IMPORTANT: Use a long, random string
+const JWT_SECRET =
+  process.env.JWT_SECRET || "YOUR_SUPER_SECRET_KEY_CHANGE_THIS_IN_RENDER";
 
 app.use(cors());
 app.use(express.json());
 
 // --- MOCK DATABASE ---
 // In a real app, use a database like MongoDB or PostgreSQL
-let usersDB = []; // Stores { id, username, passwordHash }
+let usersDB = []; // Stores { id, email, passwordHash }
 let keysDB = {
   "SNEAK-PEEK-123": {
-    duration_ms: 10 * 1000,
+    duration_ms: 3 * 60 * 1000,
     isUsed: false,
     activatedByUserId: null,
     expiration_timestamp: null,
@@ -35,39 +35,90 @@ let keysDB = {
   },
 };
 
+// --- HELPER FUNCTION FOR EMAIL VALIDATION ---
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
 // --- AUTHENTICATION ENDPOINTS ---
 
-// 1. User Registration
+// 1. User Registration (Now with strong validation)
 app.post("/api/register", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password)
-    return res
-      .status(400)
-      .json({ message: "Username and password are required." });
-  if (usersDB.find((u) => u.username === username))
-    return res.status(409).json({ message: "Username already exists." });
+  try {
+    const { email, password } = req.body;
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const newUser = { id: usersDB.length + 1, username, passwordHash };
-  usersDB.push(newUser);
-  console.log("Users DB:", usersDB);
-  res.status(201).json({ message: "User registered successfully." });
+    // --- Validation Checks ---
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required." });
+    }
+    if (!isValidEmail(email)) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address." });
+    }
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters long." });
+    }
+    if (usersDB.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
+      return res
+        .status(409)
+        .json({ message: "This email address is already in use." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = {
+      id: usersDB.length + 1,
+      email: email.toLowerCase(),
+      passwordHash,
+    };
+    usersDB.push(newUser);
+
+    console.log("New user registered:", newUser.email);
+    res
+      .status(201)
+      .json({ message: "Account created successfully. You can now log in." });
+  } catch (error) {
+    console.error("Registration Error:", error);
+    res.status(500).json({ message: "An internal server error occurred." });
+  }
 });
 
-// 2. User Login
+// 2. User Login (Secure and robust)
 app.post("/api/login", async (req, res) => {
-  const { username, password } = req.body;
-  const user = usersDB.find((u) => u.username === username);
-  if (!user) return res.status(401).json({ message: "Invalid credentials." });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required." });
+    }
 
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!isMatch)
-    return res.status(401).json({ message: "Invalid credentials." });
+    const user = usersDB.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase()
+    );
+    // Security: Use the same error message for non-existent user or wrong password
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
 
-  const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
-  res.json({ message: "Login successful.", token });
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    res.json({ message: "Login successful.", token });
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "An internal server error occurred." });
+  }
 });
 
 // --- MIDDLEWARE TO PROTECT ROUTES ---
@@ -88,7 +139,6 @@ app.post("/api/activate", authenticateToken, (req, res) => {
   const { key } = req.body;
   const userId = req.user.id; // Get user ID from the verified JWT
 
-  // Check if user already has an active key
   const existingKey = Object.values(keysDB).find(
     (k) => k.activatedByUserId === userId && k.expiration_timestamp > Date.now()
   );
@@ -101,7 +151,6 @@ app.post("/api/activate", authenticateToken, (req, res) => {
   if (keyData.isUsed)
     return res.status(403).json({ message: "This key has already been used." });
 
-  // Activate the key: Lock it to the user
   keyData.isUsed = true;
   keyData.activatedByUserId = userId;
   keyData.expiration_timestamp = Date.now() + keyData.duration_ms;
@@ -116,7 +165,6 @@ app.post("/api/activate", authenticateToken, (req, res) => {
 });
 
 // --- STATUS CHECK ENDPOINT ---
-// The dashboard will call this to verify the session and key status
 app.get("/api/status", authenticateToken, (req, res) => {
   const userId = req.user.id;
   const activeKey = Object.values(keysDB).find(
@@ -127,26 +175,14 @@ app.get("/api/status", authenticateToken, (req, res) => {
     res.json({
       isLoggedIn: true,
       isActivated: true,
-      username: req.user.username,
+      email: req.user.email,
       expires: activeKey.expiration_timestamp,
     });
   } else {
-    res.json({
-      isLoggedIn: true,
-      isActivated: false,
-      username: req.user.username,
-    });
+    res.json({ isLoggedIn: true, isActivated: false, email: req.user.email });
   }
 });
-// --- HEALTH CHECK / PING ENDPOINT ---
-// This is the dedicated URL that UptimeRobot will hit.
-app.get("/ping", (req, res) => {
-  // It simply sends back a success response.
-  res.status(200).json({
-    status: "ok",
-    message: "Server is awake and running.",
-  });
-});
+
 app.listen(PORT, () =>
   console.log(`Secure server running on http://localhost:${PORT}`)
 );

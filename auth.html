@@ -1,23 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- ... (same <head> and <style> as before, no changes needed) ... -->
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Login | TikTok Coin Tool</title>
+    <style>
+      :root {
+        --primary-color: #fe2c55;
+        --primary-hover-color: #e42a4f;
+        --text-color: #161823;
+        --background-color: #f8f8f8;
+        --container-background: #ffffff;
+        --border-color: #e0e0e0;
+        --input-background: #f9f9f9;
+        --success-color: #28a745;
+        --error-color: #dc3545;
+      }
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--background-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+      }
+      .activation-container {
+        max-width: 400px;
+        width: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .activation-box {
+        background-color: var(--container-background);
+        padding: clamp(30px, 5vh, 40px);
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        width: 100%;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: clamp(24px, 4vw, 28px);
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: var(--text-color);
+      }
+      .subtitle {
+        font-size: clamp(14px, 2.5vw, 16px);
+        color: #6b6b6b;
+        margin-bottom: clamp(24px, 5vh, 32px);
+      }
+      .input-group {
+        margin-bottom: 16px;
+      }
+      .input-group input {
+        width: 100%;
+        padding: 14px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+        background-color: var(--input-background);
+        text-align: left;
+      }
+      .activate-btn {
+        width: 100%;
+        padding: 14px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 4px;
+        background-color: var(--primary-color);
+        color: var(--container-background);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .activate-btn:hover {
+        background-color: var(--primary-hover-color);
+      }
+      .activate-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .contact-text {
+        font-size: 14px;
+        color: var(--text-color);
+        margin: 0;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+      }
+      .contact-text a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .contact-text a:hover {
+        text-decoration: underline;
+      }
+      .message-box {
+        min-height: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 15px;
+        color: var(--error-color);
+        text-align: center;
+      }
+      .message-box.success {
+        color: var(--success-color);
+      }
+      @media (max-width: 480px) {
+        body {
+          background-color: var(--container-background);
+        }
+        .activation-container {
+          padding: 0;
+          height: 100%;
+          width: 100%;
+        }
+        .activation-box {
+          height: 100%;
+          width: 100%;
+          border-radius: 0;
+          border: none;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .contact-text {
+          border-top: none;
+          padding-top: 16px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="activation-container">
       <div class="activation-box">
-        <!-- Login View (Default) -->
+        <!-- Login View -->
         <div id="login-view">
           <h1>Login</h1>
           <p class="subtitle">Enter your credentials to access the tool.</p>
           <form id="login-form">
-            <div id="login-message-box"></div>
+            <div class="message-box" id="login-message-box"></div>
             <div class="input-group">
               <input
-                type="text"
-                id="login-username"
-                placeholder="Username"
+                type="email"
+                id="login-email"
+                placeholder="Email"
                 required
               />
             </div>
@@ -31,22 +176,22 @@
             </div>
             <button type="submit" class="activate-btn">Login</button>
           </form>
-          <p class="contact-text" style="margin-top: 20px">
-            No account? <a href="#" id="show-register-view">Register here</a>
+          <p class="contact-text">
+            No account? <a id="show-register-view">Register here</a>
           </p>
         </div>
 
-        <!-- Registration View (Hidden) -->
+        <!-- Registration View -->
         <div id="register-view" style="display: none">
-          <h1>Register</h1>
+          <h1>Create Account</h1>
           <p class="subtitle">Create an account to get started.</p>
           <form id="register-form">
-            <div id="register-message-box"></div>
+            <div class="message-box" id="register-message-box"></div>
             <div class="input-group">
               <input
-                type="text"
-                id="register-username"
-                placeholder="Username"
+                type="email"
+                id="register-email"
+                placeholder="Email"
                 required
               />
             </div>
@@ -54,15 +199,14 @@
               <input
                 type="password"
                 id="register-password"
-                placeholder="Password"
+                placeholder="Password (min. 8 characters)"
                 required
               />
             </div>
             <button type="submit" class="activate-btn">Create Account</button>
           </form>
-          <p class="contact-text" style="margin-top: 20px">
-            Already have an account?
-            <a href="#" id="show-login-view">Login here</a>
+          <p class="contact-text">
+            Already have an account? <a id="show-login-view">Login here</a>
           </p>
         </div>
       </div>
@@ -70,77 +214,136 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const API_URL = "https://tiktok-coin-api.onrender.com/api"; // Change to your live server URL
+        const API_URL = "https://tiktok-coin-api.onrender.com/api"; // <-- IMPORTANT: USE YOUR LIVE RENDER URL
         const DASHBOARD_URL = "dashboard.html";
 
-        // View Elements
-        const loginView = document.getElementById("login-view");
-        const registerView = document.getElementById("register-view");
-        const showRegisterLink = document.getElementById("show-register-view");
-        const showLoginLink = document.getElementById("show-login-view");
+        // --- View and Form Management ---
+        const views = {
+          login: document.getElementById("login-view"),
+          register: document.getElementById("register-view"),
+        };
+        const forms = {
+          login: document.getElementById("login-form"),
+          register: document.getElementById("register-form"),
+        };
+        const messageBoxes = {
+          login: document.getElementById("login-message-box"),
+          register: document.getElementById("register-message-box"),
+        };
 
-        // Form Elements
-        const loginForm = document.getElementById("login-form");
-        const registerForm = document.getElementById("register-form");
-        const loginMsg = document.getElementById("login-message-box");
-        const registerMsg = document.getElementById("register-message-box");
+        document
+          .getElementById("show-register-view")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            switchView("register");
+          });
+        document
+          .getElementById("show-login-view")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            switchView("login");
+          });
 
-        // --- View Switching ---
-        showRegisterLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          loginView.style.display = "none";
-          registerView.style.display = "block";
-        });
-        showLoginLink.addEventListener("click", (e) => {
-          e.preventDefault();
-          registerView.style.display = "none";
-          loginView.style.display = "block";
-        });
+        // --- HELPER FUNCTIONS ---
+        function switchView(viewName) {
+          Object.values(views).forEach((v) => (v.style.display = "none"));
+          views[viewName].style.display = "block";
+        }
 
-        // --- Registration Logic ---
-        registerForm.addEventListener("submit", async (e) => {
+        function displayMessage(view, message, type = "error") {
+          const box = messageBoxes[view];
+          box.textContent = message;
+          box.className = `message-box ${type}`;
+        }
+
+        function setLoadingState(form, isLoading) {
+          const button = form.querySelector("button");
+          button.disabled = isLoading;
+          button.textContent = isLoading
+            ? "Verifying..."
+            : form.id === "login-form"
+            ? "Login"
+            : "Create Account";
+        }
+
+        function isValidEmail(email) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // --- REGISTRATION LOGIC ---
+        forms.register.addEventListener("submit", async (e) => {
           e.preventDefault();
-          const username = document.getElementById("register-username").value;
+          const email = document.getElementById("register-email").value;
           const password = document.getElementById("register-password").value;
 
+          if (!isValidEmail(email))
+            return displayMessage(
+              "register",
+              "Please enter a valid email address."
+            );
+          if (password.length < 8)
+            return displayMessage(
+              "register",
+              "Password must be at least 8 characters long."
+            );
+
+          setLoadingState(forms.register, true);
           try {
             const res = await fetch(`${API_URL}/register`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, password }),
+              body: JSON.stringify({ email, password }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
 
-            registerMsg.textContent = "Registration successful! Please login.";
-            registerMsg.className = "success";
+            displayMessage(
+              "register",
+              "Success! You can now log in.",
+              "success"
+            );
+            forms.register.reset();
           } catch (err) {
-            registerMsg.textContent = err.message;
-            registerMsg.className = "error";
+            displayMessage(
+              "register",
+              err.message || "An unknown error occurred."
+            );
+          } finally {
+            setLoadingState(forms.register, false);
           }
         });
 
-        // --- Login Logic ---
-        loginForm.addEventListener("submit", async (e) => {
+        // --- LOGIN LOGIC ---
+        forms.login.addEventListener("submit", async (e) => {
           e.preventDefault();
-          const username = document.getElementById("login-username").value;
+          const email = document.getElementById("login-email").value;
           const password = document.getElementById("login-password").value;
 
+          if (!email || !password)
+            return displayMessage(
+              "login",
+              "Please enter both email and password."
+            );
+
+          setLoadingState(forms.login, true);
           try {
             const res = await fetch(`${API_URL}/login`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, password }),
+              body: JSON.stringify({ email, password }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
 
-            // The most important step: Save the token
             localStorage.setItem("authToken", data.token);
             window.location.href = DASHBOARD_URL;
           } catch (err) {
-            loginMsg.textContent = err.message;
-            loginMsg.className = "error";
+            displayMessage(
+              "login",
+              err.message || "An unknown error occurred."
+            );
+          } finally {
+            setLoadingState(forms.login, false);
           }
         });
       });
