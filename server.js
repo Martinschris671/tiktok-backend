@@ -16,7 +16,7 @@ app.use(express.json());
 let usersDB = []; // Stores { id, username, passwordHash }
 let keysDB = {
   "SNEAK-PEEK-123": {
-    duration_ms: 3 * 60 * 1000,
+    duration_ms: 10 * 1000,
     isUsed: false,
     activatedByUserId: null,
     expiration_timestamp: null,
